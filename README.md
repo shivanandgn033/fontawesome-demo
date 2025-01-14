@@ -1,59 +1,98 @@
-# FontawesomeDemo
+## Fontawesome demo
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.0.6.
+TypeScript
 
-## Development server
+```typescript
+import { RouterOutlet } from '@angular/router';
+import { Component, OnInit } from '@angular/core';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { library, icon } from '@fortawesome/fontawesome-svg-core';
+import { faCoffee } from '@fortawesome/free-solid-svg-icons'; // Import specific icons
+import { faTwitter } from '@fortawesome/free-brands-svg-icons';
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 
-To start a local development server, run:
+@Component({
+  selector: 'app-root',
+  imports: [RouterOutlet, FontAwesomeModule],
+  templateUrl: './app.component.html',
+  styleUrl: './app.component.css'
+})
+export class AppComponent implements OnInit {
+  coffeeIcon!: SafeHtml;
+  twitterIcon!: SafeHtml;
+  faCoffee = faCoffee;
 
-```bash
-ng serve
+  constructor(private sanitizer: DomSanitizer) {
+    // Add icons to the library (only once, ideally in a service or app.module)
+    library.add(faCoffee, faTwitter);
+  }
+
+  ngOnInit(): void {
+    // Get the SVG icon as an HTML string
+    const coffeeSvg = icon(faCoffee).html[0];
+    const twitterSvg = icon(faTwitter).html[0];
+
+
+    // Sanitize the HTML to prevent security vulnerabilities
+    this.coffeeIcon = this.sanitizer.bypassSecurityTrustHtml(coffeeSvg);
+    this.twitterIcon = this.sanitizer.bypassSecurityTrustHtml(twitterSvg);
+  }
+
+}
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+### Key changes and explanations for Angular 19+ and best practices:
 
-## Code scaffolding
+#### 1 @fortawesome/angular-fontawesome package: The recommended approach is to use the dedicated Angular package:
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
+Bash
 ```bash
-ng generate component component-name
+npm install @fortawesome/angular-fontawesome @fortawesome/fontawesome-svg-core @fortawesome/free-solid-svg-icons @fortawesome/free-brands-svg-icons
 ```
+#### 2 Importing Icons: Import only the specific icons you need. This drastically reduces your bundle size.
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
+TypeScript
+```typescript
+import { faCoffee, faCheckSquare } from '@fortawesome/free-solid-svg-icons';
+import { faTwitter } from '@fortawesome/free-brands-svg-icons';
 ```
+#### 3 Adding to Library (Once): Add the icons to the Font Awesome library once in your application, ideally in your import[FontawesomeModule] or a shared service. This avoids redundant processing.
 
-## Building
-
-To build the project run:
-
-```bash
-ng build
+TypeScript
+```typescript
+import { library } from '@fortawesome/fontawesome-svg-core';
+// ... other imports
+library.add(faCoffee, faCheckSquare, faTwitter);
+@Component({
+  selector: 'app-root',
+  imports: [RouterOutlet, FontAwesomeModule],
+  templateUrl: './app.component.html',
+  styleUrl: './app.component.css'
+})
 ```
+#### 4 Using the <fa-icon> Component (Recommended): Use the <fa-icon> component in your templates. This is the cleanest and most efficient way.
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
-
-```bash
-ng test
+HTML
+```html
+<fa-icon [icon]="faCoffee"></fa-icon> <br/>
+<fa-icon [icon]="['fab', 'twitter']"></fa-icon> <br/>
+<fa-icon icon="coffee"></fa-icon>
 ```
+For solid icons, you can pass the icon object directly (e.g., [icon]="faCoffee").
+For brand icons, you need to pass an array ['fab', 'twitter'] where 'fab' is the style prefix.
+You can also use string literals for solid icons if you've added them to the library (e.g. icon="coffee").
 
-## Running end-to-end tests
+#### 5 Direct SVG Rendering (Less Recommended): If you absolutely need to render the SVG directly (e.g., for very specific styling or manipulation), you can still do it but use the DomSanitizer correctly. This is generally less efficient than using the component.
 
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
+TypeScript
+```typescript 
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+// ...
+constructor(private sanitizer: DomSanitizer) {}
+ngOnInit() {
+    this.coffeeIcon = this.sanitizer.bypassSecurityTrustHtml(icon(faCoffee).html[0]);
+}
 ```
+Crucially: Use this.sanitizer.bypassSecurityTrustHtml() to avoid security vulnerabilities.
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+By following these updated steps, you'll have a much cleaner, more efficient, and secure implementation of Font Awesome in your Angular 19 project. The use of <fa-icon> is strongly recommended for most use cases.
